@@ -47,20 +47,35 @@ namespace dfe{
         std::string decode(const std::string &base64str);
 
     }
-    /**
-     * @namespace detail
-     * @brief detail implement
-    */
-    namespace detail{
-        char byteToBase64char(const uint8_t b);
-        uint8_t base64charToByte(const char c);
-    }
 
     namespace exception{
         class Base64Exception : public std::runtime_error{
             public:
             Base64Exception(const char* message):runtime_error(message){}
         };
+    }
+
+    namespace{
+        inline char byteToBase64char(const uint8_t b){
+            return
+                (b<26)?('A'+b)
+                :(b<52)?('a'+(b-26))
+                :(b<62)?('0'+(b-52))
+                :(b==62)?'+'
+                :(b==63)?'/'
+                :0;
+        }
+        
+        inline uint8_t base64charToByte(const char c){
+            return
+                (c>='A'&&c<='Z')?(c-'A')
+                :(c>='a'&&c<='z')?(c-'a'+26)
+                :(c>='0'&&c<='9')?(c-'0'+52)
+                :(c=='+')?62
+                :(c=='/')?63
+                :(c=='=')?64
+                :0xff;
+        }
     }
 
     namespace base64{
@@ -77,28 +92,28 @@ namespace dfe{
                     case 0:
                     {
                         b = ch>>2 & 0b111111;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = (ch&0b11)<<4;
                     } break;
                     case 1:
                     {
                         b += ch>>4 & 0b1111;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = (ch&0b1111)<<2;
                     } break;
                     case 2:
                     {
                         b += ch>>6 & 0b11;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = ch&0b111111;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = 0;
                     } break;
                 }
                 phase=(phase+1)%3;
             }
             if(phase>0){
-                res+=detail::byteToBase64char(b);
+                res+=byteToBase64char(b);
             }
             if(res.length()%4>0){
                 for(int i=res.length()%4; i<4; i++){
@@ -116,28 +131,28 @@ namespace dfe{
                     case 0:
                     {
                         b = ch>>2 & 0b111111;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = (ch&0b11)<<4;
                     } break;
                     case 1:
                     {
                         b += ch>>4 & 0b1111;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = (ch&0b1111)<<2;
                     } break;
                     case 2:
                     {
                         b += ch>>6 & 0b11;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = ch&0b111111;
-                        res+=detail::byteToBase64char(b);
+                        res+=byteToBase64char(b);
                         b = 0;
                     } break;
                 }
                 phase=(phase+1)%3;
             }
             if(phase>0){
-                res+=detail::byteToBase64char(b);
+                res+=byteToBase64char(b);
             }
             if(res.length()%4>0){
                 for(int i=res.length()%4; i<4; i++){
@@ -154,7 +169,7 @@ namespace dfe{
             uint8_t phase=0;
             char b=0;
             for(char ch : base64str){
-                uint8_t tmp=detail::base64charToByte(ch);
+                uint8_t tmp=base64charToByte(ch);
                 if(tmp==64){
                     if(phase==1){
                         res.push_back((T)b);
@@ -196,7 +211,7 @@ namespace dfe{
             uint8_t phase=0;
             char b=0;
             for(char ch : base64str){
-                uint8_t tmp=detail::base64charToByte(ch);
+                uint8_t tmp=base64charToByte(ch);
                 if(tmp==64){
                     if(phase==1){
                         res+=b;
@@ -234,29 +249,6 @@ namespace dfe{
             return res;
         }
 
-    }
-
-    namespace detail{
-        inline char byteToBase64char(const uint8_t b){
-            return
-                (b<26)?('A'+b)
-                :(b<52)?('a'+(b-26))
-                :(b<62)?('0'+(b-52))
-                :(b==62)?'+'
-                :(b==63)?'/'
-                :0;
-        }
-        
-        inline uint8_t base64charToByte(const char c){
-            return
-                (c>='A'&&c<='Z')?(c-'A')
-                :(c>='a'&&c<='z')?(c-'a'+26)
-                :(c>='0'&&c<='9')?(c-'0'+52)
-                :(c=='+')?62
-                :(c=='/')?63
-                :(c=='=')?64
-                :0xff;
-        }
     }
 }
 
