@@ -22,14 +22,14 @@ namespace dfe{
          * @return base64 encoded string
         */
         template<typename T,typename std::enable_if<sizeof(T)==1,std::nullptr_t>::type=nullptr>
-        std::string encode(const std::vector<T> &binaryData);
+        std::string encode(const std::vector<T> &binaryData) noexcept;
         
         /**
          * @fn encode
          * @param binaryData std::string which contains binary data
          * @return base64 encoded string
         */
-        std::string encode(const std::string &binaryData);
+        std::string encode(const std::string &binaryData) noexcept;
         
         /**
          * @fn decode
@@ -82,7 +82,7 @@ namespace dfe{
         using Exception=exception::Base64Exception;
 
         template<typename T,typename std::enable_if<sizeof(T)==1,std::nullptr_t>::type=nullptr>
-        std::string encode(const std::vector<T> &binaryData){
+        std::string encode(const std::vector<T> &binaryData) noexcept{
             std::string res;
             uint8_t phase=0;
             uint8_t b=0;
@@ -122,7 +122,7 @@ namespace dfe{
             }
             return res;
         }
-        inline std::string encode(const std::string &binaryData){
+        inline std::string encode(const std::string &binaryData) noexcept{
             std::string res;
             uint8_t phase=0;
             uint8_t b=0;
