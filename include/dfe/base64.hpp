@@ -5,6 +5,14 @@
 #include<vector>
 #include<stdexcept>
 
+#ifdef __GNUC__
+#define INLINE inline __attribute__((always_inline))
+#define NOINLINE inline __attribute__((noinline))
+#else
+#define INLINE inline
+#define NOINLINE inline
+#endif
+
 /**
  * @namespace dfe
  * @brief deep-fried-eggplant.com
@@ -21,7 +29,7 @@ namespace dfe{
          * @param binaryData std::vector<T> which sizeof T is 1 byte and contains binary data
          * @return base64 encoded string
         */
-        template<typename T,typename std::enable_if<sizeof(T)==1,std::nullptr_t>::type=nullptr>
+        template<typename T>
         std::string encode(const std::vector<T> &binaryData) noexcept;
         
         /**
@@ -36,7 +44,7 @@ namespace dfe{
          * @param base64str base64 encoded string
          * @return binary data as std::vector<T> which sizeof T is 1 byte
         */
-        template<typename T,typename std::enable_if<sizeof(T)==1,std::nullptr_t>::type=nullptr>
+        template<typename T>
         std::vector<T> decode(const std::string &base64str);
         
         /**
@@ -55,8 +63,8 @@ namespace dfe{
         };
     }
 
-    namespace{
-        inline char byteToBase64char(const uint8_t b){
+    namespace detail{
+        INLINE char byteToBase64char(const uint8_t b){
             return
                 (b<26)?('A'+b)
                 :(b<52)?('a'+(b-26))
@@ -66,7 +74,7 @@ namespace dfe{
                 :0;
         }
         
-        inline uint8_t base64charToByte(const char c){
+        INLINE uint8_t base64charToByte(const char c){
             return
                 (c>='A'&&c<='Z')?(c-'A')
                 :(c>='a'&&c<='z')?(c-'a'+26)
@@ -81,8 +89,9 @@ namespace dfe{
     namespace base64{
         using Exception=exception::Base64Exception;
 
-        template<typename T,typename std::enable_if<sizeof(T)==1,std::nullptr_t>::type=nullptr>
-        std::string encode(const std::vector<T> &binaryData) noexcept{
+        template<typename T>
+        NOINLINE std::string encode(const std::vector<T> &binaryData) noexcept{
+            static_assert(sizeof(T)==1,"sizeof(vector<T>::valuetype) must be 1");
             std::string res;
             uint8_t phase=0;
             uint8_t b=0;
@@ -92,28 +101,28 @@ namespace dfe{
                     case 0:
                     {
                         b = ch>>2 & 0b111111;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = (ch&0b11)<<4;
                     } break;
                     case 1:
                     {
                         b += ch>>4 & 0b1111;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = (ch&0b1111)<<2;
                     } break;
                     case 2:
                     {
                         b += ch>>6 & 0b11;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = ch&0b111111;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = 0;
                     } break;
                 }
                 phase=(phase+1)%3;
             }
             if(phase>0){
-                res+=byteToBase64char(b);
+                res+=detail::byteToBase64char(b);
             }
             if(res.length()%4>0){
                 for(int i=res.length()%4; i<4; i++){
@@ -122,7 +131,7 @@ namespace dfe{
             }
             return res;
         }
-        inline std::string encode(const std::string &binaryData) noexcept{
+        NOINLINE std::string encode(const std::string &binaryData) noexcept{
             std::string res;
             uint8_t phase=0;
             uint8_t b=0;
@@ -131,28 +140,28 @@ namespace dfe{
                     case 0:
                     {
                         b = ch>>2 & 0b111111;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = (ch&0b11)<<4;
                     } break;
                     case 1:
                     {
                         b += ch>>4 & 0b1111;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = (ch&0b1111)<<2;
                     } break;
                     case 2:
                     {
                         b += ch>>6 & 0b11;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = ch&0b111111;
-                        res+=byteToBase64char(b);
+                        res+=detail::byteToBase64char(b);
                         b = 0;
                     } break;
                 }
                 phase=(phase+1)%3;
             }
             if(phase>0){
-                res+=byteToBase64char(b);
+                res+=detail::byteToBase64char(b);
             }
             if(res.length()%4>0){
                 for(int i=res.length()%4; i<4; i++){
@@ -163,13 +172,14 @@ namespace dfe{
         }
         
         
-        template<typename T,typename std::enable_if<sizeof(T)==1,std::nullptr_t>::type=nullptr>
-        std::vector<T> decode(const std::string &base64str){
+        template<typename T>
+        NOINLINE std::vector<T> decode(const std::string &base64str){
+            static_assert(sizeof(T)==1,"sizeof(vector<T>::value_type) must be 1");
             std::vector<T> res;
             uint8_t phase=0;
             char b=0;
             for(char ch : base64str){
-                uint8_t tmp=base64charToByte(ch);
+                uint8_t tmp=detail::base64charToByte(ch);
                 if(tmp==64){
                     if(phase==1){
                         res.push_back((T)b);
@@ -206,12 +216,12 @@ namespace dfe{
             }
             return res;
         }
-        std::string decode(const std::string &base64str){
+        NOINLINE std::string decode(const std::string &base64str){
             std::string res;
             uint8_t phase=0;
             char b=0;
             for(char ch : base64str){
-                uint8_t tmp=base64charToByte(ch);
+                uint8_t tmp=detail::base64charToByte(ch);
                 if(tmp==64){
                     if(phase==1){
                         res+=b;
